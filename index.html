@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="description" content="Gerador de código de barras — CODE128, EAN-13, UPC e CODE39, com exportação em PNG.">
+
+    <title>Gerador de Código de Barras Pro</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cód. de Barras">
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --success: #10B981;
+            --success-hover: #059669;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --error: #EF4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Trava a página como estática: sem "folga" de bounce ao arrastar,
+           e sem barra de rolagem própria a menos que o conteúdo realmente
+           precise (ex: vários códigos gerados). */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overscroll-behavior-y: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            padding: 20px;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            max-width: 450px;
+            width: 100%;
+            margin: auto;
+        }
+
+        h2 {
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 12px;
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-group:hover {
+            background-color: #F3F4F6;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-download {
+            background-color: var(--success);
+            display: none;
+        }
+
+        .btn-download:hover {
+            background-color: var(--success-hover);
+        }
+
+        .barcode-output {
+            margin-top: 25px;
+            padding: 25px 20px;
+            background-color: #F9FAFB;
+            border: 2px dashed #D1D5DB;
+            border-radius: 12px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        #barcode {
+            max-width: 100%;
+            height: auto;
+            display: none;
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Gerador de Código de Barras</h2>
+
+    <div class="input-group">
+        <label for="barcodeValue">Valor do Código (Atualiza ao digitar):</label>
+        <input type="text" id="barcodeValue" placeholder="Ex: 12345678" value="12345">
+    </div>
+
+    <div class="input-group">
+        <label for="barcodeFormat">Formato do Código:</label>
+        <select id="barcodeFormat">
+            <option value="CODE128">CODE128 (Letras e Números)</option>
+            <option value="EAN13">EAN-13 (Padrão de Mercado)</option>
+            <option value="UPC">UPC (Padrão Americano)</option>
+            <option value="CODE39">CODE39 (Básico)</option>
+        </select>
+    </div>
+
+    <label class="checkbox-group">
+        <input type="checkbox" id="milContra">
+        Adicionar sufixo "0001" (Mil Contra)
+    </label>
+
+    <button class="btn-download" id="btnDownload" onclick="downloadBarcode()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Baixar Imagem PNG
+    </button>
+
+    <div class="barcode-output" id="outputContainer">
+        <img id="barcode" alt="Código de Barras">
+        <div class="error-message" id="errorMessage">Formato inválido. Verifique o tamanho do código gerado.</div>
+    </div>
+</div>
+
+<script>
+    const inputValor = document.getElementById('barcodeValue');
+    const selectFormato = document.getElementById('barcodeFormat');
+    const checkMilContra = document.getElementById('milContra');
+    const imgBarcode = document.getElementById('barcode');
+    const btnDownload = document.getElementById('btnDownload');
+    const msgErro = document.getElementById('errorMessage');
+    const containerOutput = document.getElementById('outputContainer');
+
+    function generateBarcode() {
+        let valorBase = inputValor.value.trim();
+        const formato = selectFormato.value;
+        const aplicarMilContra = checkMilContra.checked;
+
+        if (!valorBase) {
+            imgBarcode.style.display = 'none';
+            btnDownload.style.display = 'none';
+            msgErro.style.display = 'none';
+            containerOutput.style.borderColor = '#D1D5DB';
+            return;
+        }
+
+        let valorFinal = aplicarMilContra ? valorBase + "0001" : valorBase;
+
+        try {
+            JsBarcode("#barcode", valorFinal, {
+                format: formato,
+                lineColor: "#111827",
+                width: 2,
+                height: 80,
+                displayValue: true,
+                fontSize: 18,
+                margin: 10,
+                fontOptions: "bold"
+            });
+
+            imgBarcode.style.display = 'block';
+            btnDownload.style.display = 'flex';
+            msgErro.style.display = 'none';
+            containerOutput.style.borderColor = '#10B981';
+
+        } catch (error) {
+            imgBarcode.style.display = 'none';
+            btnDownload.style.display = 'none';
+            msgErro.style.display = 'block';
+            msgErro.innerText = `Erro: O valor "${valorFinal}" não é válido para o formato ${formato}.`;
+            containerOutput.style.borderColor = '#EF4444';
+        }
+    }
+
+    inputValor.addEventListener('input', generateBarcode);
+    selectFormato.addEventListener('change', generateBarcode);
+    checkMilContra.addEventListener('change', generateBarcode);
+
+    function downloadBarcode() {
+        if (imgBarcode.src) {
+            let valorBase = inputValor.value.trim();
+            let nomeArquivo = checkMilContra.checked ? `${valorBase}_0001` : valorBase;
+
+            const link = document.createElement('a');
+            link.href = imgBarcode.src;
+            link.download = `codigo_${nomeArquivo}.png`;
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    window.onload = generateBarcode;
+
+    // Registro do service worker (funcionamento offline como PWA)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').catch(() => {});
+        });
+    }
+</script>
+
+</body>
+</html>
