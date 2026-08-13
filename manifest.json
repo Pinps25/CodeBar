@@ -1,12 +1,12 @@
 {
-  "name": "Gerador de Código de Barras Pro",
-  "short_name": "Cód. de Barras",
-  "description": "Gerador de código de barras — CODE128, EAN-13, UPC e CODE39, com exportação em PNG.",
+  "name": "Etiqueta — Gerador de Código de Barras",
+  "short_name": "Etiqueta",
+  "description": "Gerador de código de barras e QR Code — CODE128, EAN-13, EAN-8, UPC, CODE39, ITF-14, Codabar, MSI — com exportação em PNG e SVG.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F3F4F6",
-  "theme_color": "#4F46E5",
+  "background_color": "#EDE7D9",
+  "theme_color": "#C1272D",
   "orientation": "portrait",
   "icons": [
     {
