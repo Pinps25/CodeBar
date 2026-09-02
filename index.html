@@ -114,10 +114,10 @@
             letter-spacing: -0.01em;
         }
 
-        /* ---------- Tabs (Barras / QR) ---------- */
+        /* ---------- Tabs (Barras / QR / Auditoria) ---------- */
         .tabs {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             background: var(--paper);
             border-radius: 10px;
             padding: 4px;
@@ -126,10 +126,10 @@
 
         .tab-btn {
             font-family: var(--font-mono);
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.03em;
-            padding: 10px 8px;
+            letter-spacing: 0.02em;
+            padding: 10px 4px;
             border: none;
             background: transparent;
             color: var(--ink-muted);
@@ -285,6 +285,9 @@
         .btn-svg:hover { background: #35312B; }
 
         /* ---------- Área de saída ---------- */
+        /* position: sticky = fica normal no fluxo da página; só "gruda" no topo
+           quando a rolagem for tirá-la de vista (ex: opções avançadas abertas
+           empurrando o conteúdo). Sem JS, sem seguir a tela o tempo todo. */
         .output {
             margin-top: 22px;
             padding: 22px 16px;
@@ -298,6 +301,10 @@
             align-items: center;
             gap: 12px;
             transition: border-color 0.25s;
+            position: sticky;
+            top: 10px;
+            z-index: 5;
+            box-shadow: 0 10px 20px rgba(28, 26, 23, 0.10);
         }
 
         .output img, .output canvas { max-width: 100%; height: auto; display: none; border-radius: 2px; }
@@ -312,6 +319,114 @@
         }
 
         .qr-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+
+        /* ---------- Auditoria: setores (acordeão com seta) ---------- */
+        details.sector-accordion {
+            border: 1.5px solid #E1DACB;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        details.sector-accordion summary {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--stamp);
+            padding: 12px 14px;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #FBFAF6;
+        }
+
+        details.sector-accordion summary::-webkit-details-marker { display: none; }
+        details.sector-accordion summary::before { content: '▸'; transition: transform 0.15s; color: var(--ink-muted); }
+        details.sector-accordion[open] summary::before { transform: rotate(90deg); }
+
+        details.sector-accordion .sector-grid {
+            padding: 12px 14px 14px;
+        }
+
+        .sector-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .sector-btn {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            background: #FBFAF6;
+            border: 1.5px solid #E1DACB;
+            border-radius: 6px;
+            padding: 7px 9px;
+            cursor: pointer;
+            transition: background 0.12s, border-color 0.12s, color 0.12s;
+        }
+
+        .sector-btn:hover { border-color: var(--ink); }
+
+        .sector-btn.selected {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: #fff;
+        }
+
+        .checkbox-pair { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+
+        .checkbox-row.exclusive-off { opacity: 0.55; }
+
+        .refresh-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .refresh-btn {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            background: transparent;
+            border: 1.5px solid #E1DACB;
+            color: var(--ink-muted);
+            border-radius: 7px;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .final-preview {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+            background: #FBFAF6;
+            border: 1.5px dashed #E1DACB;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            word-break: break-all;
+        }
+
+        .final-preview .label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-muted);
+            margin-bottom: 4px;
+        }
 
         footer {
             text-align: center;
@@ -333,15 +448,21 @@
         <h1>Gerador de Código</h1>
 
         <div class="tabs">
-            <button class="tab-btn active" id="tabBarras" onclick="switchTab('barras')">▮▮▍ CÓDIGO DE BARRAS</button>
+            <button class="tab-btn active" id="tabBarras" onclick="switchTab('barras')">▮▮▍ BARRAS</button>
             <button class="tab-btn" id="tabQr" onclick="switchTab('qr')">▦ QR CODE</button>
+            <button class="tab-btn" id="tabAuditoria" onclick="switchTab('auditoria')">🏬 AUDITORIA</button>
         </div>
 
         <!-- ===================== PAINEL: BARRAS ===================== -->
         <div class="panel active" id="panelBarras">
+            <div class="output" id="outputBarras">
+                <img id="barcode" alt="Código de barras gerado">
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
             <div class="field">
                 <label for="barcodeValue">Valor do código <span class="hint-count" id="charCount"></span></label>
-                <input type="text" id="barcodeValue" placeholder="Ex: 12345678" value="12345" autocomplete="off">
+                <input type="text" id="barcodeValue" placeholder="Ex: 12345678" value="12345" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
                 <div class="field-hint" id="formatHint"></div>
             </div>
 
@@ -390,15 +511,15 @@
                 <button class="action btn-png" id="btnPng">⬇ PNG</button>
                 <button class="action btn-svg" id="btnSvg">⬇ SVG</button>
             </div>
-
-            <div class="output" id="outputBarras">
-                <img id="barcode" alt="Código de barras gerado">
-                <div class="error-message" id="errorMessage"></div>
-            </div>
         </div>
 
         <!-- ===================== PAINEL: QR ===================== -->
         <div class="panel" id="panelQr">
+            <div class="output" id="outputQr">
+                <canvas id="qrCanvas"></canvas>
+                <div class="error-message" id="qrErrorMessage"></div>
+            </div>
+
             <div class="field">
                 <label for="qrValue">Texto, link ou código</label>
                 <input type="text" id="qrValue" placeholder="Ex: https://exemplo.com/produto/123" autocomplete="off">
@@ -429,10 +550,59 @@
                 <button class="action btn-png" id="btnQrPng">⬇ PNG</button>
                 <button class="action btn-svg" id="btnQrSvg">⬇ SVG</button>
             </div>
+        </div>
 
-            <div class="output" id="outputQr">
-                <canvas id="qrCanvas"></canvas>
-                <div class="error-message" id="qrErrorMessage"></div>
+        <!-- ===================== PAINEL: AUDITORIA ===================== -->
+        <div class="panel" id="panelAuditoria">
+            <div class="output" id="outputAuditoria">
+                <img id="auditBarcode" alt="Código de barras de auditoria gerado">
+                <div class="error-message" id="auditErrorMessage"></div>
+            </div>
+
+            <div class="final-preview" id="auditFinalPreview" style="display:none;">
+                <span class="label">Valor codificado</span>
+                <span id="auditFinalPreviewText"></span>
+            </div>
+
+            <div class="field">
+                <label for="auditValue">Código selecionado <span class="hint-count" id="auditCharCount"></span></label>
+                <input type="text" id="auditValue" placeholder="Toque em um setor ou digite" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+            </div>
+
+            <details class="sector-accordion">
+                <summary>Setor Perecíveis</summary>
+                <div class="sector-grid" id="gridPereciveis"></div>
+            </details>
+
+            <details class="sector-accordion">
+                <summary>Setor Mercearia</summary>
+                <div class="sector-grid" id="gridMercearia"></div>
+            </details>
+
+            <details class="sector-accordion">
+                <summary>Hortifruti</summary>
+                <div class="sector-grid" id="gridHortifruti"></div>
+            </details>
+
+            <div class="checkbox-pair" style="margin-top: 18px;">
+                <label class="checkbox-row" id="auditMilContraRow">
+                    <input type="checkbox" id="auditMilContra">
+                    <span>Adicionar sufixo "0001" (Mil Contra)</span>
+                </label>
+                <label class="checkbox-row" id="auditFormatoEtiquetaRow">
+                    <input type="checkbox" id="auditFormatoEtiqueta">
+                    <span>Formato Etiqueta (:p:CÓDIGO:vp:XX)</span>
+                </label>
+            </div>
+
+            <div class="refresh-row">
+                <span class="field-hint" style="margin:0;">O XX muda a cada digitação — use o botão pra sortear sem alterar o código.</span>
+                <button class="refresh-btn" id="btnAuditRefresh" disabled>🔀 Novo XX</button>
+            </div>
+
+            <div class="btn-row">
+                <button class="action btn-png" id="btnAuditPng">⬇ PNG</button>
+                <button class="action btn-svg" id="btnAuditSvg">⬇ SVG</button>
             </div>
         </div>
 
@@ -448,8 +618,10 @@
     function switchTab(tab) {
         document.getElementById('tabBarras').classList.toggle('active', tab === 'barras');
         document.getElementById('tabQr').classList.toggle('active', tab === 'qr');
+        document.getElementById('tabAuditoria').classList.toggle('active', tab === 'auditoria');
         document.getElementById('panelBarras').classList.toggle('active', tab === 'barras');
         document.getElementById('panelQr').classList.toggle('active', tab === 'qr');
+        document.getElementById('panelAuditoria').classList.toggle('active', tab === 'auditoria');
     }
 
     /* ======================= REGRAS POR FORMATO (robustez) ======================= */
@@ -532,6 +704,19 @@
     function generateBarcode() {
         const formato = selectFormato.value;
         const rule = FORMAT_RULES[formato];
+
+        // Teclado numérico automático (Android/iOS) por padrão — cobre o uso mais
+        // comum (CODE128 com números, EAN, UPC, ITF-14, MSI). Só os formatos que
+        // realmente costumam usar letras/símbolos (CODE39, Codabar) usam teclado
+        // padrão, já que o teclado numérico do iOS não tem alternância p/ letras.
+        const formatosComTeclado = { CODE39: true, CODABAR: true };
+        if (formatosComTeclado[formato]) {
+            inputValor.setAttribute('inputmode', 'text');
+            inputValor.removeAttribute('pattern');
+        } else {
+            inputValor.setAttribute('inputmode', 'numeric');
+            inputValor.setAttribute('pattern', '[0-9]*');
+        }
 
         // sanitiza sem mexer no cursor de forma agressiva: só reescreve se mudou
         const sanitized = sanitizeInput(inputValor.value, rule);
@@ -707,6 +892,164 @@
             setTimeout(() => URL.revokeObjectURL(url), 2000);
         });
     });
+
+    /* ======================= AUDITORIA ======================= */
+    const SECTOR_GROUPS = {
+        gridPereciveis: ['F01', 'F02', 'F03', 'F04', 'F05', 'F06', 'I01', 'IF01', 'PF01', 'PF02', 'PF03', 'PF04', 'GELO', 'SORVETE'],
+        gridMercearia: ['CO01', 'CO02', 'CS01', 'G01A', 'G02A', 'G02B', 'G03A', 'G03B', 'G04A', 'G04B', 'G05A', 'G05B', 'G06A', 'G06B', 'G07A', 'G07B', 'G08A', 'G09A', 'G09B', 'G10A', 'G10B', 'G11A', 'G11B', 'G12B', 'I02', 'PA01', 'PA02', 'PAO', 'PL01'],
+        gridHortifruti: ['FLV']
+    };
+
+    const auditValue = document.getElementById('auditValue');
+    const auditCharCount = document.getElementById('auditCharCount');
+    const auditMilContra = document.getElementById('auditMilContra');
+    const auditFormatoEtiqueta = document.getElementById('auditFormatoEtiqueta');
+    const auditMilContraRow = document.getElementById('auditMilContraRow');
+    const auditFormatoEtiquetaRow = document.getElementById('auditFormatoEtiquetaRow');
+    const btnAuditRefresh = document.getElementById('btnAuditRefresh');
+    const auditFinalPreview = document.getElementById('auditFinalPreview');
+    const auditFinalPreviewText = document.getElementById('auditFinalPreviewText');
+    const auditBarcode = document.getElementById('auditBarcode');
+    const btnAuditPng = document.getElementById('btnAuditPng');
+    const btnAuditSvg = document.getElementById('btnAuditSvg');
+    const auditErro = document.getElementById('auditErrorMessage');
+    const outputAuditoria = document.getElementById('outputAuditoria');
+
+    let auditRandomSuffix = '00';
+    function novoSufixoAleatorio() {
+        auditRandomSuffix = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+    }
+
+    // Monta os botões de cada setor a partir de SECTOR_GROUPS
+    Object.entries(SECTOR_GROUPS).forEach(([gridId, codes]) => {
+        const grid = document.getElementById(gridId);
+        codes.forEach((code) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sector-btn';
+            btn.textContent = code;
+            btn.dataset.code = code;
+            btn.addEventListener('click', () => {
+                auditValue.value = code;
+                document.querySelectorAll('.sector-btn.selected').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                generateAuditBarcode();
+            });
+            grid.appendChild(btn);
+        });
+    });
+
+    // "Mil Contra" e "Formato Etiqueta" são mutuamente exclusivos
+    auditMilContra.addEventListener('change', () => {
+        if (auditMilContra.checked) auditFormatoEtiqueta.checked = false;
+        atualizarEstadoCheckboxes();
+        generateAuditBarcode();
+    });
+
+    auditFormatoEtiqueta.addEventListener('change', () => {
+        if (auditFormatoEtiqueta.checked) auditMilContra.checked = false;
+        atualizarEstadoCheckboxes();
+        generateAuditBarcode();
+    });
+
+    function atualizarEstadoCheckboxes() {
+        auditMilContraRow.classList.toggle('exclusive-off', auditFormatoEtiqueta.checked);
+        auditFormatoEtiquetaRow.classList.toggle('exclusive-off', auditMilContra.checked);
+        btnAuditRefresh.disabled = !auditFormatoEtiqueta.checked;
+    }
+
+    btnAuditRefresh.addEventListener('click', () => {
+        if (!auditFormatoEtiqueta.checked) return;
+        novoSufixoAleatorio();
+        generateAuditBarcode(true); // true = não sorteia de novo, usa o que acabou de gerar
+    });
+
+    auditValue.addEventListener('input', () => generateAuditBarcode());
+
+    function calcularValorFinalAuditoria(skipReroll) {
+        const base = auditValue.value.trim();
+        if (auditMilContra.checked) return base + '0001';
+        if (auditFormatoEtiqueta.checked) {
+            if (!skipReroll) novoSufixoAleatorio();
+            return `:p:${base}:vp:${auditRandomSuffix}`;
+        }
+        return base;
+    }
+
+    function generateAuditBarcode(skipReroll) {
+        const base = auditValue.value.trim();
+        auditCharCount.textContent = base ? `${base.length} caractere(s)` : '';
+
+        if (!base) {
+            auditBarcode.style.display = 'none';
+            btnAuditPng.style.display = 'none';
+            btnAuditSvg.style.display = 'none';
+            auditErro.style.display = 'none';
+            auditFinalPreview.style.display = 'none';
+            outputAuditoria.style.borderColor = '#D9D0BB';
+            return;
+        }
+
+        const valorFinal = calcularValorFinalAuditoria(skipReroll);
+
+        try {
+            JsBarcode('#auditBarcode', valorFinal, {
+                format: 'CODE128',
+                width: 2,
+                height: 80,
+                fontSize: 14,
+                margin: 10,
+                displayValue: true,
+                lineColor: '#1C1A17'
+            });
+            auditBarcode.style.display = 'block';
+            btnAuditPng.style.display = 'flex';
+            btnAuditSvg.style.display = 'flex';
+            auditErro.style.display = 'none';
+            auditFinalPreview.style.display = 'block';
+            auditFinalPreviewText.textContent = valorFinal;
+            outputAuditoria.style.borderColor = '#2F6F4E';
+        } catch (e) {
+            auditBarcode.style.display = 'none';
+            btnAuditPng.style.display = 'none';
+            btnAuditSvg.style.display = 'none';
+            auditErro.style.display = 'block';
+            auditErro.textContent = 'Valor inválido para gerar o código de barras.';
+            auditFinalPreview.style.display = 'none';
+            outputAuditoria.style.borderColor = '#C1272D';
+        }
+    }
+
+    function nomeArquivoAuditoria(ext) {
+        const base = auditValue.value.trim().replace(/[^a-zA-Z0-9_-]/g, '') || 'codigo';
+        return `auditoria_${base}.${ext}`;
+    }
+
+    btnAuditPng.addEventListener('click', () => {
+        if (auditBarcode.src) baixar(auditBarcode.src, nomeArquivoAuditoria('png'));
+    });
+
+    btnAuditSvg.addEventListener('click', () => {
+        const valorFinal = calcularValorFinalAuditoria(true); // reusa o mesmo XX já exibido
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const tempSvg = document.createElementNS(svgNS, 'svg');
+        try {
+            JsBarcode(tempSvg, valorFinal, {
+                format: 'CODE128', width: 2, height: 80, fontSize: 14, margin: 10,
+                displayValue: true, lineColor: '#1C1A17'
+            });
+            const svgStr = new XMLSerializer().serializeToString(tempSvg);
+            const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            baixar(url, nomeArquivoAuditoria('svg'));
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        } catch (e) {
+            auditErro.style.display = 'block';
+            auditErro.textContent = 'Não foi possível gerar o SVG para este valor.';
+        }
+    });
+
+    atualizarEstadoCheckboxes();
 
     /* ======================= INIT ======================= */
     window.onload = generateBarcode;

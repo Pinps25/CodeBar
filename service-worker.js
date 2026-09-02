@@ -1,7 +1,7 @@
 // Service worker — Etiqueta / Gerador de Código de Barras
 // Cacheia o "app shell" para funcionar offline após a primeira visita.
 
-const CACHE_NAME = 'etiqueta-barcode-v2';
+const CACHE_NAME = 'etiqueta-barcode-v6';
 const APP_SHELL = [
     './',
     './index.html',
