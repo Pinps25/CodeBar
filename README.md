@@ -1,4 +1,4 @@
-# Etiqueta — Gerador de Código de Barras
+# CodeBar — Gerador de Código de Barras
 
 PWA para gerar código de barras e QR Code direto no navegador, com exportação em PNG e SVG.
 
@@ -9,8 +9,8 @@ PWA para gerar código de barras e QR Code direto no navegador, com exportação
    index.html
    manifest.json
    service-worker.js
-   icons/icon-192.png
-   icons/icon-512.png
+   icons/icon-192-v3.png
+   icons/icon-512-v3.png
    ```
 2. **Settings → Pages → Source → Deploy from branch → main / (root)**.
 3. Acesse o link gerado e, no celular, use "Adicionar à tela de início" para instalar como app.

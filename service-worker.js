@@ -1,13 +1,13 @@
 // Service worker — Etiqueta / Gerador de Código de Barras
 // Cacheia o "app shell" para funcionar offline após a primeira visita.
 
-const CACHE_NAME = 'etiqueta-barcode-v7';
+const CACHE_NAME = 'codebar-v10';
 const APP_SHELL = [
     './',
     './index.html',
     './manifest.json',
-    './icons/icon-192.png',
-    './icons/icon-512.png',
+    './icons/icon-192-v3.png',
+    './icons/icon-512-v3.png',
     'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js',
     'https://unpkg.com/qrcode@1.4.1/build/qrcode.min.js',
     'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap'
