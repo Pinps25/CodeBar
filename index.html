@@ -290,16 +290,16 @@
            empurrando o conteúdo). Sem JS, sem seguir a tela o tempo todo. */
         .output {
             margin-top: 22px;
-            padding: 22px 16px;
+            padding: 14px;
             background: repeating-linear-gradient(135deg, #FBFAF6, #FBFAF6 10px, #F5F2E9 10px, #F5F2E9 20px);
             border: 1.5px dashed #D9D0BB;
             border-radius: 10px;
-            min-height: 130px;
+            min-height: 60px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             transition: border-color 0.25s;
             position: sticky;
             top: 10px;
@@ -307,7 +307,29 @@
             box-shadow: 0 10px 20px rgba(28, 26, 23, 0.10);
         }
 
-        .output img, .output canvas { max-width: 100%; height: auto; display: none; border-radius: 2px; }
+        /* Tamanho natural do código — a caixa encolhe pra caber só o
+           código, sem sobrar área vazia (só limita pra não estourar a tela). */
+        #barcode, #auditBarcode { max-width: 100%; height: auto; display: none; border-radius: 2px; margin: 0 auto; }
+        /* QR continua esticando pra preencher, já que ali funciona bem */
+        #qrCanvas { width: 100%; height: auto; display: none; border-radius: 2px; margin: 0 auto; }
+
+        .toggle-text-btn {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            background: transparent;
+            border: 1.5px solid #E1DACB;
+            color: var(--ink-muted);
+            border-radius: 7px;
+            padding: 8px 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 4px;
+            margin-bottom: 18px;
+        }
+
+        .toggle-text-btn:active { transform: scale(0.98); }
 
         .error-message {
             color: var(--stamp);
@@ -456,9 +478,11 @@
         <!-- ===================== PAINEL: BARRAS ===================== -->
         <div class="panel active" id="panelBarras">
             <div class="output" id="outputBarras">
-                <img id="barcode" alt="Código de barras gerado">
+                <svg id="barcode" role="img" aria-label="Código de barras gerado"></svg>
                 <div class="error-message" id="errorMessage"></div>
             </div>
+
+            <button type="button" class="toggle-text-btn" id="btnToggleTextoBarras">🏷️ Ocultar texto do código</button>
 
             <div class="field">
                 <label for="barcodeValue">Valor do código <span class="hint-count" id="charCount"></span></label>
@@ -555,9 +579,11 @@
         <!-- ===================== PAINEL: AUDITORIA ===================== -->
         <div class="panel" id="panelAuditoria">
             <div class="output" id="outputAuditoria">
-                <img id="auditBarcode" alt="Código de barras de auditoria gerado">
+                <svg id="auditBarcode" role="img" aria-label="Código de barras de auditoria gerado"></svg>
                 <div class="error-message" id="auditErrorMessage"></div>
             </div>
+
+            <button type="button" class="toggle-text-btn" id="btnToggleTextoAuditoria">🏷️ Ocultar texto do código</button>
 
             <div class="final-preview" id="auditFinalPreview" style="display:none;">
                 <span class="label">Valor codificado</span>
@@ -690,13 +716,21 @@
         return `Use ${rule.lengths.join(' ou ')} dígitos.`;
     }
 
+    let mostrarTextoBarras = true;
+    const btnToggleTextoBarras = document.getElementById('btnToggleTextoBarras');
+    btnToggleTextoBarras.addEventListener('click', () => {
+        mostrarTextoBarras = !mostrarTextoBarras;
+        btnToggleTextoBarras.textContent = mostrarTextoBarras ? '🏷️ Ocultar texto do código' : '🏷️ Mostrar texto do código';
+        generateBarcode();
+    });
+
     function currentOptions() {
         return {
             width: parseFloat(optWidth.value),
             height: parseFloat(optHeight.value),
             fontSize: parseFloat(optFont.value),
             margin: parseFloat(optMargin.value),
-            displayValue: parseFloat(optFont.value) > 0,
+            displayValue: mostrarTextoBarras && parseFloat(optFont.value) > 0,
             lineColor: '#1C1A17'
         };
     }
@@ -761,6 +795,8 @@
 
         try {
             JsBarcode('#barcode', valorFinal, { format: formato, ...currentOptions() });
+            // Tamanho natural (sem esticar) — deixa o próprio SVG do
+            // JsBarcode definir width/height, só exibe.
             imgBarcode.style.display = 'block';
             btnPng.style.display = 'flex';
             btnSvg.style.display = 'flex';
@@ -796,7 +832,17 @@
     }
 
     btnPng.addEventListener('click', () => {
-        if (imgBarcode.src) baixar(imgBarcode.src, nomeArquivoBarras('png'));
+        const formato = selectFormato.value;
+        let valorBase = inputValor.value.trim();
+        const valorFinal = checkMilContra.checked ? valorBase + '0001' : valorBase;
+        const tempCanvas = document.createElement('canvas');
+        try {
+            JsBarcode(tempCanvas, valorFinal, { format: formato, ...currentOptions() });
+            baixar(tempCanvas.toDataURL('image/png'), nomeArquivoBarras('png'));
+        } catch (e) {
+            msgErro.style.display = 'block';
+            msgErro.textContent = 'Não foi possível gerar o PNG para este valor.';
+        }
     });
 
     // Exportação em SVG (qualidade — nítido em qualquer resolução/impressão)
@@ -842,8 +888,12 @@
             outputQr.style.borderColor = '#D9D0BB';
             return;
         }
+        // Renderiza em resolução bem maior que o tamanho exibido (3x) e
+        // deixa o CSS reduzir visualmente — evita o borrão de esticar um
+        // canvas pequeno, sem depender de injetar SVG bruto na tela.
+        const displaySize = parseInt(qrSize.value, 10);
         const opts = {
-            width: parseInt(qrSize.value, 10),
+            width: displaySize * 3,
             margin: 2,
             errorCorrectionLevel: qrLevel.value,
             color: { dark: '#1C1A17', light: '#FBFAF6' }
@@ -858,7 +908,11 @@
                 outputQr.style.borderColor = '#C1272D';
                 return;
             }
+            qrCanvas.removeAttribute('style'); // limpa o estilo que a lib aplica (causava o tamanho gigante)
             qrCanvas.style.display = 'block';
+            qrCanvas.style.width = '100%';
+            qrCanvas.style.height = 'auto';
+            qrCanvas.style.margin = '0 auto';
             btnQrPng.style.display = 'flex';
             btnQrSvg.style.display = 'flex';
             qrErro.style.display = 'none';
@@ -873,7 +927,15 @@
     btnQrPng.addEventListener('click', () => {
         const texto = qrValue.value.trim();
         if (!texto) return;
-        baixar(qrCanvas.toDataURL('image/png'), 'qrcode.png');
+        QRCode.toDataURL(texto, {
+            width: parseInt(qrSize.value, 10) * 3,
+            margin: 2,
+            errorCorrectionLevel: qrLevel.value,
+            color: { dark: '#1C1A17', light: '#FBFAF6' }
+        }, function (err, url) {
+            if (err) return;
+            baixar(url, 'qrcode.png');
+        });
     });
 
     btnQrSvg.addEventListener('click', () => {
@@ -976,6 +1038,14 @@
         return base;
     }
 
+    let mostrarTextoAuditoria = true;
+    const btnToggleTextoAuditoria = document.getElementById('btnToggleTextoAuditoria');
+    btnToggleTextoAuditoria.addEventListener('click', () => {
+        mostrarTextoAuditoria = !mostrarTextoAuditoria;
+        btnToggleTextoAuditoria.textContent = mostrarTextoAuditoria ? '🏷️ Ocultar texto do código' : '🏷️ Mostrar texto do código';
+        generateAuditBarcode(true);
+    });
+
     function generateAuditBarcode(skipReroll) {
         const base = auditValue.value.trim();
         auditCharCount.textContent = base ? `${base.length} caractere(s)` : '';
@@ -999,9 +1069,11 @@
                 height: 80,
                 fontSize: 14,
                 margin: 10,
-                displayValue: true,
+                displayValue: mostrarTextoAuditoria,
                 lineColor: '#1C1A17'
             });
+            // Tamanho natural (sem esticar) — deixa o próprio SVG do
+            // JsBarcode definir width/height, só exibe.
             auditBarcode.style.display = 'block';
             btnAuditPng.style.display = 'flex';
             btnAuditSvg.style.display = 'flex';
@@ -1026,7 +1098,18 @@
     }
 
     btnAuditPng.addEventListener('click', () => {
-        if (auditBarcode.src) baixar(auditBarcode.src, nomeArquivoAuditoria('png'));
+        const valorFinal = calcularValorFinalAuditoria(true);
+        const tempCanvas = document.createElement('canvas');
+        try {
+            JsBarcode(tempCanvas, valorFinal, {
+                format: 'CODE128', width: 2, height: 80, fontSize: 14, margin: 10,
+                displayValue: mostrarTextoAuditoria, lineColor: '#1C1A17'
+            });
+            baixar(tempCanvas.toDataURL('image/png'), nomeArquivoAuditoria('png'));
+        } catch (e) {
+            auditErro.style.display = 'block';
+            auditErro.textContent = 'Não foi possível gerar o PNG para este valor.';
+        }
     });
 
     btnAuditSvg.addEventListener('click', () => {
@@ -1036,7 +1119,7 @@
         try {
             JsBarcode(tempSvg, valorFinal, {
                 format: 'CODE128', width: 2, height: 80, fontSize: 14, margin: 10,
-                displayValue: true, lineColor: '#1C1A17'
+                displayValue: mostrarTextoAuditoria, lineColor: '#1C1A17'
             });
             const svgStr = new XMLSerializer().serializeToString(tempSvg);
             const blob = new Blob([svgStr], { type: 'image/svg+xml' });
